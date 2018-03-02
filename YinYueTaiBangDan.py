@@ -1,7 +1,12 @@
+'''
+后续完善调转页面，等10分钟抓取等相关功能
+'''
+
 import requests
 from bs4 import BeautifulSoup
 import lxml
 import random
+import re
 
 def userAgent():
     agent = ['Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0;',
@@ -11,7 +16,7 @@ def userAgent():
               'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; 360SE)']
 
     kv = {}
-    kv['user-agent'] = agent[random.randint(0, len(agent))]
+    kv['user-agent'] = agent[random.randint(0, len(agent)-1)]
     return kv
 
 def proxyIP():
@@ -36,22 +41,52 @@ def getHTML(url):
         print("getHTML ERROR!")
 
 def getRANK(url):
+    matchs = []
     html = getHTML(url)
     soup = BeautifulSoup(html, 'lxml')
     rank = soup.find_all('li', class_='vitem J_li_toggle_date ')
     for li in rank:
         match = {}
-        match
-    return rank
+        match['mvname'] = li.find(class_='mvname').text
+        match['mvauthor'] = li.find(class_='special').text
+        match['time'] = li.find(class_='c9').text
+        match['top_num'] = li.find('div', class_='top_num').text
+        if li.find('h3', class_='desc_score'):
+            match['score'] = li.find('h3', class_='desc_score').text
+        else:
+            match['score'] = li.find('h3', class_='asc_score').text
+        matchs.append(match)
+        print(match)
+    return matchs
 
-def saveTXT():
-    pass
+def saveTXT(datas):
+    with open('D:/git/code/YinYueTaiBangDan.txt', 'a', encoding='utf-8' ) as f:
+        for data in datas:
+            f.write('单曲名称：{} 歌手：{} 发行时间：{} 单曲排名：{} 排行榜得分：{}\n'
+                    .format(data['mvname'],data['mvauthor'],data['time'],data['top_num'],data['score']))
+
+def urlPOOL(url):
+    url_pool = []
+    html = getHTML(url)
+    soup = BeautifulSoup(html, 'lxml')
+    category = soup.find_all('a', class_=re.compile('J_area'))
+    for cate in category:
+        url_pool.append(cate['data-area'])
+    return url_pool
 
 def main():
-    url = 'http://vchart.yinyuetai.com/vchart/trends'
-    print(getRANK(url))
+    base_url = 'http://vchart.yinyuetai.com/vchart/trends'
+    url_poll = urlPOOL(base_url)
+    for i in url_poll:
+        url = base_url + '?area=' + i
+        print(url)
+        rank_list = getRANK(url)
+        saveTXT(rank_list)
+    print('爬取完毕')
+
 
 
 if __name__ == '__main__':
     main()
+
 
