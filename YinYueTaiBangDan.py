@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import lxml
 import random
 import re
+import sys
 
 def userAgent():
     agent = ['Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0;',
@@ -41,6 +42,18 @@ def getHTML(url):
         print("getHTML ERROR!")
 
 def getRANK(url):
+    if re.search('All', url,) != None:
+        print('{:=^60}'.format('全部榜单'))
+    elif re.search('ML',url) != None:
+        print('{:=^60}'.format('内地榜单'))
+    elif re.search('HT',url) != None:
+        print('{:=^60}'.format('港台榜单'))
+    elif re.search('US',url,) != None:
+        print('{:=^60}'.format('欧美榜单'))
+    elif re.search('KR',url,) != None:
+        print('{:=^60}'.format('韩国榜单'))
+    else:
+        print('{:=^60}'.format('日本榜单'))
     matchs = []
     html = getHTML(url)
     soup = BeautifulSoup(html, 'lxml')
@@ -74,19 +87,34 @@ def urlPOOL(url):
         url_pool.append(cate['data-area'])
     return url_pool
 
-def main():
+def main(top_list):
     base_url = 'http://vchart.yinyuetai.com/vchart/trends'
     url_poll = urlPOOL(base_url)
     for i in url_poll:
         url = base_url + '?area=' + i
-        print(url)
-        rank_list = getRANK(url)
+        if top_list != None:
+            if top_list <= 20:
+                url_add = url + '&page=1'
+                rank_list = getRANK(url_add)
+            elif top_list <= 40:
+                url_add = url + '&page=2'
+                rank_list = getRANK(url_add)
+            elif top_list <= 50:
+                url_add = url + '&page=3'
+                print(url_add)
+                rank_list = getRANK(url_add)
+            else:
+                continue
+        else:
+            rank_list = getRANK(url)
+        print(url or url_add)
         saveTXT(rank_list)
     print('爬取完毕')
 
 
 
 if __name__ == '__main__':
-    main()
+    top_input = int(input('请输入想关注的排名只能取整数20/40/50:'))
+    main(top_input)
 
 
